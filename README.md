@@ -3,7 +3,7 @@ Repositorio para archivos usados en proyecto DS
 
 ➲ Entrega 1: https://docs.google.com/document/d/1JT8BACf9gkWuGrTUYdD1iwqGPVQAaz4org9GYvsy9IY/edit?ts=6090139e#
 
-➲ Entrega 2: https://docs.google.com/document/d/1OaAW4dJG0PSKfOj971ecb2QNEJKBX8e-2JzR2GIzfIU/edit?ts=60de22bb#
+➲ Entrega 2: https://docs.google.com/document/d/1Zw0AJDhZRao7Wwwtst0gKKRTC5DMMU0G/edit?rtpof=true
 
 ➲ Script avance: https://www.dropbox.com/s/4nhdpztz0tj6e5u/Script%20Compartido.R?dl=0
 

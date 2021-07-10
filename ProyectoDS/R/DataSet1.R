@@ -18,7 +18,7 @@ library(scales)
 
 #Carga de base de datos ----
 
-vacunacion_world <- read_csv("./country_vaccinations.csv")
+vacunacion_world <- read_csv("https://raw.githubusercontent.com/Vngel0/ProyectoUC/main/ProyectoDS/Dataet2/country_vaccinations.csv")
 
 
 vacunacion_world2 <- vacunacion_world %>%

@@ -28,7 +28,7 @@ library(GGally)
 lluvia_original <- read.csv("Lluvia.csv", encoding = "utf-8")
 ```
 
-#### Verificación de que los datos han sido cargados correctamente (Notamos que hay una variable que esta actuando como indice, que será removida más adelante):
+#### Verificación de que los datos han sido cargados correctamente:
 
 ```{r head lluvias, echo = FALSE}
 # Resumen exploratorio de los datos
@@ -41,8 +41,11 @@ head(lluvia_original)
 # Resumen exploratorio de los datos
 skim(lluvia_original)
 ```
+#### Se logra apreciar que hay una variable que esta actuando como indice, la cual será removida pues no es relevante en el análisis.  
 
-#### Se observa un outlayer, pues el límite de nub3pm es hasta 8 y existe un valor 9 el cual será eliminado. A continuación se detalla la fila a eliminar:
+#### Notamos que existen ciertas variables que estás como tipo número pero corresponden a variables de tipo factor, ya que, representan a características de los datos, las cuales serán modificadas.  
+
+#### Se observar un outlayer, pues el límite de nub3pm es hasta 8 y vemos un valor 9 el cual será eliminado, ya que, no tenemos certeza de cual es el valor que corresponde porque el máximo es otro. A continuación se detalla la fila a eliminar:
 
 ```{r outlayer, echo = FALSE}
 # Resumen exploratorio de los datos
@@ -99,7 +102,7 @@ ggcorrplot::ggcorrplot(M, lab = T, type="upper", digits = 1, p.mat = P,
 </center>
 
 #### Es posible observar que **target** tiene correlación con casi todas las variables.  
-Sin embargo, las únicas que son significativas a partir de p-value son: **lluvia**, **hum9am**, **hum3pm**, **evaporacion**, **sol** y **temp3pm**, donde las más fuertes son **hum3pm** y la sigue **sol**.
+#### Sin embargo, las únicas que son significativas a partir de p-value son: **lluvia**, **hum9am**, **hum3pm**, **evaporacion**, **sol** y **temp3pm**, donde las más fuertes son **hum3pm** y la sigue **sol**.  
 
 
 ```{r fig.align="center", echo = FALSE, message = FALSE}
@@ -167,7 +170,7 @@ gridExtra::grid.arrange(g_hum3pm,
                        nrow = 3)
 
 ```
-#### 
+#### A partir de los gráficos anteriores, se logra verificar la correlación observada mencionada anteriormente, apreciamos que la linea de tendencia se ajusta a la relación entre las variables.
 
 # Pregunta 3
 
@@ -208,14 +211,14 @@ lm_forward <- step(lm_null, formula(lm_all), direction = "forward")
 print(summary(lm_backward))
 
 print(summary(lm_forward))
-
 ```
 
 
 ```{r modelos obtenidos, echo = FALSE}
 # Modelos
-print(paste("Modelo Backward : ", formula(lm_backward)))
+
 print(paste("Modelo Forward  : ", formula(lm_forward)))
+print(paste("Modelo Backward : ", formula(lm_backward)))
 ```
 #### Los modelos son iguales
 
@@ -225,8 +228,8 @@ print(paste("Modelo Forward  : ", formula(lm_forward)))
 aic_forward <- AIC(lm_forward)
 aic_backward <- AIC(lm_backward)
 
-print(paste("AIC para Backward : ", aic_backward))
 print(paste("AIC para Forward  : ", aic_forward))
+print(paste("AIC para Backward : ", aic_backward))
 ```
 #### Ambos modelos rinden en igual medida.
 
@@ -239,13 +242,12 @@ print(paste("AIC para Forward  : ", aic_forward))
 #car::vif(lm_backward)
 #car::vif(lm_forward)
 
-print(paste("R cuadrado para Backward : ", summary(lm_backward)$r.squared))
 print(paste("R cuadrado para Forward  : ", summary(lm_forward)$r.squared))
+print(paste("R cuadrado para Backward : ", summary(lm_backward)$r.squared))
 
-print(paste("R cuadrado ajustado para Backward : ", summary(lm_backward)$adj.r.squared))
 print(paste("R cuadrado ajustado para Forward  : ", summary(lm_forward)$adj.r.squared))
+print(paste("R cuadrado ajustado para Backward : ", summary(lm_backward)$adj.r.squared))
 ```
-  
 #### Ambos modelos son significativos, con un R cuadrado sobre 78%. Sin embargo, el modelo Forward, explica levemente mejor la variabilidad de los datos.
 
 # Pregunta 5
@@ -260,29 +262,30 @@ ggplot(lm_forward, aes(sample = lm_forward$residuals))+
   theme_minimal()
 ```
 
-#### Se observa que las puntas se alejan bastante de la recta, lo que nos permite concluir que no se cumple el supuesto de normalidad
+#### Se observa que las puntas se alejan bastante de la recta, lo que nos permite concluir que no se cumple el supuesto de normalidad.
 
 ```{r supuesto normalidad, echo = FALSE}
 nortest::lillie.test(lm_forward$residuals)
 ```
-#### El valor p es bastante pequeño, por lo que se rechaza h0 confirmando lo anterior, no se cumple el supuesto de normalidad para los residuos
+#### El valor p es bastante pequeño, por lo que se rechaza h0 confirmando lo anterior, no se cumple el supuesto de normalidad para los residuos.
+
+```{r fig.align="center", echo = FALSE}
+library(ggfortify)
+autoplot(lm_forward, which = c(1,3), colour = "steelblue") + theme_minimal()
+```
+#### Observando de manera visual, se logra apreciar que la forma generada por los puntos no es constante, más bien una circunferencia, por lo tanto, no  se ve homocedasticidad.
+
+```{r supuesto homocedasticidad, echo = FALSE}
+lmtest:: bptest(lm_forward)
+```
+#### El valor p es bastante pequeño, por lo que se rechaza h0 confirmando lo anterior, por lo tanto no  se cumple el supuesto de homocedásticidad en los residuos.
 
 ```{r supuesto autocorrelación, echo = FALSE}
 lmtest::dwtest(lm_forward)
 ```
 #### Aceptamos h0, dado que el valor p es mayor a 5%, por lo que los residuos estan autocorrelacionados, lo que nos permite concluir que se cumple el supuesto de independencia.
 
-```{r supuesto homocedasticidad, echo = FALSE}
-lmtest:: bptest(lm_forward)
-```
-#### Se rechaza h0, por lo tanto los errores no son homocedásticos
-
-```{r fig.align="center", echo = FALSE}
-library(ggfortify)
-autoplot(lm_forward, which = 1:6, colour = "steelblue") + theme_minimal()
-```
-
-#### Se puede decir que el modelo no es aceptable, no se cumple el test de normalidad, homocedasticidad aunque si de autocorrelación
+#### Se puede decir que el modelo no es aceptable, no se cumple el test de normalidad, homocedasticidad aunque si de autocorrelación.
 
 
 # Pregunta 6
@@ -301,6 +304,8 @@ datos_extra <- datos_extra %>% clean_names() %>%
 datos_extra <- datos_extra %>% select(-x)
 ```
 
+
+#### A continuación se visualizan los resultados de la predicción aplicando el modelo propuesto a los datos extras:
 ```{r estimación con el modelo, echo = FALSE}
 prediccion <- predict(lm_forward, datos_extra)
 
@@ -309,10 +314,15 @@ head(prediccion, 8)
 prediccion <- round(prediccion, 1) 
 
 dato_extra <- datos_extra$target
+```
 
+
+#### Comparación entre la predicción del modelo y la información que trae datos extra:
+```{r predicciones vs datos, echo = FALSE}
 df <- prediccion
 
 df <- cbind(prediccion, dato_extra)
 
 head(df, 15)
 ```
+

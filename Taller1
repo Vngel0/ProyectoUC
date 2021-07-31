@@ -1,0 +1,318 @@
+---
+title: "Taller 1 Regresión lineal"
+author: "Angelo Inostroza - Christopher Recabarren"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    df_print: paged
+---
+
+```{r librerias, include = FALSE}
+library(tidyverse)
+library(janitor)
+library(skimr)
+library(stats)
+library(GGally)
+```
+
+# Enunciado  
+### Se le contratan sus servicios como Data Science en un centro meteorológico para poder crear un modelo que pueda estimar la diferencia de temperatura que habrá en un día (temperatura máxima menos la mínima), utilizando la información del día anterior, para ello se dispone de 40000 observaciones y un conjunto de 18 variables
+
+# Pregunta 1
+
+>Cargue los datos lluvia.csv, verificando que estos hayan sido leídos correctamente, codifique como factor las variables que corresponda, además, generé un resumen exploratorio de los datos.
+
+```{r ds lluvias, include = FALSE}
+# Carga de datos con correcta lectura por formatos.
+lluvia_original <- read.csv("Lluvia.csv", encoding = "utf-8")
+```
+
+#### Verificación de que los datos han sido cargados correctamente (Notamos que hay una variable que esta actuando como indice, que será removida más adelante):
+
+```{r head lluvias, echo = FALSE}
+# Resumen exploratorio de los datos
+head(lluvia_original)
+```
+
+#### Análisis exploratorio al dataset:
+
+```{r fig.align="center", echo = FALSE}
+# Resumen exploratorio de los datos
+skim(lluvia_original)
+```
+
+#### Se observa un outlayer, pues el límite de nub3pm es hasta 8 y existe un valor 9 el cual será eliminado. A continuación se detalla la fila a eliminar:
+
+```{r outlayer, echo = FALSE}
+# Resumen exploratorio de los datos
+outlayer <- lluvia_original %>% filter(Nub3pm == "9")
+
+head(outlayer)
+
+lluvia <- lluvia_original %>% filter(!Nub3pm == "9")
+```
+
+#### Datos limpios:
+
+```{r Limpieza de datos, include = FALSE}
+# Cambio a factor de variables y eliminación de x
+lluvia <- lluvia_original %>% clean_names() %>%
+  select(-x) %>% 
+  mutate(koppen = as.factor(koppen),
+         estacion = as.factor(estacion),
+         lluvia_hoy = as.factor(lluvia_hoy))
+```
+
+#### Visualización general limpia:
+
+```{r head limpio, echo = FALSE}
+# Resumen exploratorio de los datos
+head(lluvia)
+```
+
+#### Resumen exploratorio limpio:
+
+```{r fig.align="center", echo = FALSE}
+# Resumen exploratorio de los datos
+skim(lluvia)
+```
+
+#### Tenemos 3 variables que han sido transformadas a factor (**koppen**, **estacion** y **lluvia_hoy**), el resto son númericas. 
+
+#### Presentamos un outlayer en la variable **nub3pm** y No tenemos valores perdidos.
+
+# Pregunta 2
+
+>Para las variables continuas, genere un análisis gráfico de dichas variables con el target y un análisis de correlación lineal
+
+<center>
+```{r fig.align="center", echo = FALSE}
+# Análisis de variables continuas con el target
+variables_continuas <- lluvia %>% select(-koppen, -estacion, -lluvia_hoy, -nub3pm, -nub9am)
+M <- cor(variables_continuas)
+P <- ggcorrplot::cor_pmat(M)
+ggcorrplot::ggcorrplot(M, lab = T, type="upper", digits = 1, p.mat = P,
+                       ggtheme = ggplot2::theme_void,
+                       title = "Correlación entre variables continuas")
+```
+</center>
+
+#### Es posible observar que **target** tiene correlación con casi todas las variables.  
+Sin embargo, las únicas que son significativas a partir de p-value son: **lluvia**, **hum9am**, **hum3pm**, **evaporacion**, **sol** y **temp3pm**, donde las más fuertes son **hum3pm** y la sigue **sol**.
+
+
+```{r fig.align="center", echo = FALSE, message = FALSE}
+# Análisis de variables continuas con el target
+g_hum3pm <- ggplot(data = lluvia, aes(y = target, x = hum3pm))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_hum9am <- ggplot(data = lluvia, aes(y = target, x = hum9am))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_lluvia <- ggplot(data = lluvia, aes(y = target, x = lluvia))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_pre3pm <- ggplot(data = lluvia, aes(y = target, x = pre3pm))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_pres9am <- ggplot(data = lluvia, aes(y = target, x = pres9am))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_sol <- ggplot(data = lluvia, aes(y = target, x = sol))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_temp3pm <- ggplot(data = lluvia, aes(y = target, x = temp3pm))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_temp9am <- ggplot(data = lluvia, aes(y = target, x = temp9am))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_evaporacion <- ggplot(data = lluvia, aes(y = target, x = evaporacion))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_vel3pm <- ggplot(data = lluvia, aes(y = target, x = vel3pm))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_vel_rafaga <- ggplot(data = lluvia, aes(y = target, x = vel_rafaga))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+g_vel9am <- ggplot(data = lluvia, aes(y = target, x = vel9am))+
+  geom_point(color = 'Black', alpha = 0.5, shape = 18)+geom_smooth(color = 'steelblue')+
+  theme_minimal()
+
+gridExtra::grid.arrange(g_hum3pm,
+                       g_hum9am,
+                       g_lluvia,
+                       g_pre3pm,
+                       g_pres9am,
+                       g_sol,
+                       g_temp3pm,
+                       g_temp9am,
+                       g_evaporacion,
+                       g_vel3pm,
+                       g_vel_rafaga,
+                       g_vel9am,
+                       nrow = 3)
+
+```
+#### 
+
+# Pregunta 3
+
+>Realice un modelo de regresión lineal simple para modelar la diferencia de temperatura utilizando la covariable Temp3pm, además, generé el gráfico del target vs Temp3pm y añada la curva ajustada. ¿Es esta variable significativa?, ¿Cuál es la variabilidad explicada por el modelo?
+
+```{r modelo regresion lineal simple, echo = FALSE}
+# modelo de regresión lineal simple
+modelo1 <- lm(target ~ temp3pm, data = lluvia)
+summary(modelo1)
+```
+
+##### Según el modelo, es una variable significativa con 0.1% ***. Además este modelo explica el 20.36% de la variabiliadad.
+
+```{r fig.align="center", echo = FALSE, message = FALSE}
+# Gráfico
+ggplot(data = lluvia, aes(y = target , x = temp3pm))+
+  geom_point(color = 'Black', shape = 18, alpha = 0.5)+
+  geom_smooth(method = "lm", se = F, color = 'steelblue')+
+  theme_minimal()
+```
+ 
+
+# Pregunta 4
+
+>Ajuste un modelo de regresión lineal utilizando la metodología forward y backward , ¿Los modelos obtenidos son diferentes?, ¿Son estos modelos significativos?, ¿Cuál es el porcentaje de variabilidad explicada por el mejor de estos modelos?
+
+# ¿Los modelos obtenidos son diferentes?
+```{r modelo regresion según metodología, include = FALSE}
+# Modelo Regresión lineal
+lm_null <- lm(target ~ 1, data = lluvia)
+lm_all <- lm(target ~ ., data = lluvia)
+
+lm_backward <- step(lm_all, direction = "backward")
+
+
+lm_forward <- step(lm_null, formula(lm_all), direction = "forward")
+
+print(summary(lm_backward))
+
+print(summary(lm_forward))
+
+```
+
+
+```{r modelos obtenidos, echo = FALSE}
+# Modelos
+print(paste("Modelo Backward : ", formula(lm_backward)))
+print(paste("Modelo Forward  : ", formula(lm_forward)))
+```
+#### Los modelos son iguales
+
+### Revisión del AIC
+```{r AIC, echo = FALSE}
+
+aic_forward <- AIC(lm_forward)
+aic_backward <- AIC(lm_backward)
+
+print(paste("AIC para Backward : ", aic_backward))
+print(paste("AIC para Forward  : ", aic_forward))
+```
+#### Ambos modelos rinden en igual medida.
+
+# ¿Son estos modelos significativos?  
+
+¿Cuál es el porcentaje de variabilidad explicada por el mejor de estos modelos?
+
+```{r análisis de modelos, echo = FALSE}
+# Análisis
+#car::vif(lm_backward)
+#car::vif(lm_forward)
+
+print(paste("R cuadrado para Backward : ", summary(lm_backward)$r.squared))
+print(paste("R cuadrado para Forward  : ", summary(lm_forward)$r.squared))
+
+print(paste("R cuadrado ajustado para Backward : ", summary(lm_backward)$adj.r.squared))
+print(paste("R cuadrado ajustado para Forward  : ", summary(lm_forward)$adj.r.squared))
+```
+  
+#### Ambos modelos son significativos, con un R cuadrado sobre 78%. Sin embargo, el modelo Forward, explica levemente mejor la variabilidad de los datos.
+
+# Pregunta 5
+>Realice un estudio de residuos con los principales supuestos del mejor modelo de la pregunta 4, por medio de test estadísticos y gráficos. ¿Es un modelo adecuado?
+
+# ¿Es un modelo adecuado?
+
+```{r fig.align="center", echo = FALSE}
+ggplot(lm_forward, aes(sample = lm_forward$residuals))+
+  stat_qq()+
+  stat_qq_line()+
+  theme_minimal()
+```
+
+#### Se observa que las puntas se alejan bastante de la recta, lo que nos permite concluir que no se cumple el supuesto de normalidad
+
+```{r supuesto normalidad, echo = FALSE}
+nortest::lillie.test(lm_forward$residuals)
+```
+#### El valor p es bastante pequeño, por lo que se rechaza h0 confirmando lo anterior, no se cumple el supuesto de normalidad para los residuos
+
+```{r supuesto autocorrelación, echo = FALSE}
+lmtest::dwtest(lm_forward)
+```
+#### Aceptamos h0, dado que el valor p es mayor a 5%, por lo que los residuos estan autocorrelacionados, lo que nos permite concluir que se cumple el supuesto de independencia.
+
+```{r supuesto homocedasticidad, echo = FALSE}
+lmtest:: bptest(lm_forward)
+```
+#### Se rechaza h0, por lo tanto los errores no son homocedásticos
+
+```{r fig.align="center", echo = FALSE}
+library(ggfortify)
+autoplot(lm_forward, which = 1:6, colour = "steelblue") + theme_minimal()
+```
+
+#### Se puede decir que el modelo no es aceptable, no se cumple el test de normalidad, homocedasticidad aunque si de autocorrelación
+
+
+# Pregunta 6
+
+>Se dispone de un conjunto de datos Datos extras.csv en la cual se tiene información de 5000 tomas de muestras de una central meteorológica, utilizando el mejor modelo de la pregunta 4, generé la estimación de diferencias de temperaturas para dichas observaciones
+
+```{r ds datos extra, include = FALSE}
+# Carga de datos con correcta lectura por formatos.
+datos_extra <- read.csv("Datos extras.csv", encoding = "utf-8")
+
+datos_extra <- datos_extra %>% clean_names() %>%
+  mutate(koppen = as.factor(koppen),
+         estacion = as.factor(estacion),
+         lluvia_hoy = as.factor(lluvia_hoy))         
+
+datos_extra <- datos_extra %>% select(-x)
+```
+
+```{r estimación con el modelo, echo = FALSE}
+prediccion <- predict(lm_forward, datos_extra)
+
+head(prediccion, 8)
+
+prediccion <- round(prediccion, 1) 
+
+dato_extra <- datos_extra$target
+
+df <- prediccion
+
+df <- cbind(prediccion, dato_extra)
+
+head(df, 15)
+```

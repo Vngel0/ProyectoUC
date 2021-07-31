@@ -170,6 +170,8 @@ gridExtra::grid.arrange(g_hum3pm,
                        nrow = 3)
 
 ```
+  
+
 #### A partir de los gráficos anteriores, se logra verificar la correlación observada mencionada anteriormente, apreciamos que la linea de tendencia se ajusta a la relación entre las variables.
 
 # Pregunta 3
@@ -198,7 +200,7 @@ ggplot(data = lluvia, aes(y = target , x = temp3pm))+
 >Ajuste un modelo de regresión lineal utilizando la metodología forward y backward , ¿Los modelos obtenidos son diferentes?, ¿Son estos modelos significativos?, ¿Cuál es el porcentaje de variabilidad explicada por el mejor de estos modelos?
 
 # ¿Los modelos obtenidos son diferentes?
-```{r modelo regresion según metodología, include = FALSE}
+```{r modelo regresion según metodología, include = FALSE, eval = TRUE}
 # Modelo Regresión lineal
 lm_null <- lm(target ~ 1, data = lluvia)
 lm_all <- lm(target ~ ., data = lluvia)
@@ -207,12 +209,7 @@ lm_backward <- step(lm_all, direction = "backward")
 
 
 lm_forward <- step(lm_null, formula(lm_all), direction = "forward")
-
-print(summary(lm_backward))
-
-print(summary(lm_forward))
 ```
-
 
 ```{r modelos obtenidos, echo = FALSE}
 # Modelos
@@ -225,8 +222,8 @@ print(paste("Modelo Backward : ", formula(lm_backward)))
 ### Revisión del AIC
 ```{r AIC, echo = FALSE}
 
-aic_forward <- AIC(lm_forward)
-aic_backward <- AIC(lm_backward)
+aic_forward <- data.frame(extractAIC(lm_forward))
+aic_backward <- data.frame(extractAIC(lm_backward))
 
 print(paste("AIC para Forward  : ", aic_forward))
 print(paste("AIC para Backward : ", aic_backward))
@@ -250,6 +247,15 @@ print(paste("R cuadrado ajustado para Backward : ", summary(lm_backward)$adj.r.s
 ```
 #### Ambos modelos son significativos, con un R cuadrado sobre 78%. Sin embargo, el modelo Forward, explica levemente mejor la variabilidad de los datos.
 
+#### Modelo propuesto:
+```{r modelo obtenidos, echo = FALSE}
+print(lm_forward$call)
+print(lm_forward$anova)
+
+print(summary(lm_forward))
+```
+#### Podemos ver que todas las variables son significativas.
+
 # Pregunta 5
 >Realice un estudio de residuos con los principales supuestos del mejor modelo de la pregunta 4, por medio de test estadísticos y gráficos. ¿Es un modelo adecuado?
 
@@ -257,7 +263,7 @@ print(paste("R cuadrado ajustado para Backward : ", summary(lm_backward)$adj.r.s
 
 ```{r fig.align="center", echo = FALSE}
 ggplot(lm_forward, aes(sample = lm_forward$residuals))+
-  stat_qq()+
+  stat_qq(color = 'steelblue')+
   stat_qq_line()+
   theme_minimal()
 ```
@@ -273,6 +279,8 @@ nortest::lillie.test(lm_forward$residuals)
 library(ggfortify)
 autoplot(lm_forward, which = c(1,3), colour = "steelblue") + theme_minimal()
 ```
+  
+
 #### Observando de manera visual, se logra apreciar que la forma generada por los puntos no es constante, más bien una circunferencia, por lo tanto, no  se ve homocedasticidad.
 
 ```{r supuesto homocedasticidad, echo = FALSE}

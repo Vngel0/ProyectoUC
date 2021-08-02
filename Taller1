@@ -17,7 +17,7 @@ library(GGally)
 ```
 
 # Enunciado  
-### Se le contratan sus servicios como Data Science en un centro meteorológico para poder crear un modelo que pueda estimar la diferencia de temperatura que habrá en un día (temperatura máxima menos la mínima), utilizando la información del día anterior, para ello se dispone de 40000 observaciones y un conjunto de 18 variables
+### Se le contratan sus servicios como Data Science en un centro meteorológico para poder crear un modelo que pueda estimar la diferencia de temperatura que habrá en un día (temperatura máxima menos la mínima), utilizando la información del día anterior, para ello se dispone de 40000 observaciones y un conjunto de 18 variables.
 
 # Pregunta 1
 
@@ -43,12 +43,13 @@ skim(lluvia_original)
 ```
 #### Se logra apreciar que hay una variable que esta actuando como indice, la cual será removida pues no es relevante en el análisis.  
 
-#### Notamos que existen ciertas variables que estás como tipo número pero corresponden a variables de tipo factor, ya que, representan a características de los datos, las cuales serán modificadas.  
+#### Notamos que existen ciertas variables que están como tipo número pero corresponden a variables de tipo factor, ya que, representan características de los datos, las cuales serán modificadas.  
 
-#### Se observar un outlayer, pues el límite de nub3pm es hasta 8 y vemos un valor 9 el cual será eliminado, ya que, no tenemos certeza de cual es el valor que corresponde porque el máximo es otro. A continuación se detalla la fila a eliminar:
+#### Se observar un outlayer, pues el límite de nub3pm es hasta 8 y vemos un valor 9 el cual será eliminado, ya que, no tenemos certeza de cual es el valor que corresponde porque el máximo es otro. 
+
+#### A continuación se detalla la fila a eliminar:
 
 ```{r outlayer, echo = FALSE}
-# Resumen exploratorio de los datos
 outlayer <- lluvia_original %>% filter(Nub3pm == "9")
 
 head(outlayer)
@@ -60,7 +61,7 @@ lluvia <- lluvia_original %>% filter(!Nub3pm == "9")
 
 ```{r Limpieza de datos, include = FALSE}
 # Cambio a factor de variables y eliminación de x
-lluvia <- lluvia_original %>% clean_names() %>%
+lluvia <- lluvia %>% clean_names() %>%
   select(-x) %>% 
   mutate(koppen = as.factor(koppen),
          estacion = as.factor(estacion),
@@ -83,26 +84,13 @@ skim(lluvia)
 
 #### Tenemos 3 variables que han sido transformadas a factor (**koppen**, **estacion** y **lluvia_hoy**), el resto son númericas. 
 
-#### Presentamos un outlayer en la variable **nub3pm** y No tenemos valores perdidos.
+#### Presentamos un outlayer en la variable **nub3pm** y no tenemos valores perdidos.
 
 # Pregunta 2
 
 >Para las variables continuas, genere un análisis gráfico de dichas variables con el target y un análisis de correlación lineal
 
-<center>
-```{r fig.align="center", echo = FALSE}
-# Análisis de variables continuas con el target
-variables_continuas <- lluvia %>% select(-koppen, -estacion, -lluvia_hoy, -nub3pm, -nub9am)
-M <- cor(variables_continuas)
-P <- ggcorrplot::cor_pmat(M)
-ggcorrplot::ggcorrplot(M, lab = T, type="upper", digits = 1, p.mat = P,
-                       ggtheme = ggplot2::theme_void,
-                       title = "Correlación entre variables continuas")
-```
-</center>
-
-#### Es posible observar que **target** tiene correlación con casi todas las variables.  
-#### Sin embargo, las únicas que son significativas a partir de p-value son: **lluvia**, **hum9am**, **hum3pm**, **evaporacion**, **sol** y **temp3pm**, donde las más fuertes son **hum3pm** y la sigue **sol**.  
+#### Para realizar este análisis, consideraremos solo las variables continuas, excluyendo koppen, lluvia_hoy y estación porque corresponden variables categóricas/factor. Además,nub9am y nub3pm las dejaremos fuera de este análisis, ya que, si bien son numéricas, corresponde a una variable discreta.  
 
 
 ```{r fig.align="center", echo = FALSE, message = FALSE}
@@ -172,7 +160,22 @@ gridExtra::grid.arrange(g_hum3pm,
 ```
   
 
-#### A partir de los gráficos anteriores, se logra verificar la correlación observada mencionada anteriormente, apreciamos que la linea de tendencia se ajusta a la relación entre las variables.
+#### A partir de los gráficos anteriores, se logra verificar la correlación observada mencionada anteriormente, apreciamos que la linea de tendencia se ajusta a la relación entre las variables.  
+
+<center>
+```{r fig.align="center", echo = FALSE}
+# Análisis de variables continuas con el target
+variables_continuas <- lluvia %>% select(-koppen, -estacion, -lluvia_hoy, -nub3pm, -nub9am)
+M <- cor(variables_continuas)
+P <- ggcorrplot::cor_pmat(M)
+ggcorrplot::ggcorrplot(M, lab = T, type="upper", digits = 1, p.mat = P,
+                       ggtheme = ggplot2::theme_void,
+                       title = "Correlación entre variables continuas")
+```
+</center>
+
+#### Es posible observar que **target** tiene correlación con casi todas las variables.  
+#### Sin embargo, las únicas que son significativas a partir de p-value son: **lluvia**, **hum9am**, **hum3pm**, **evaporacion**, **sol** y **temp3pm**, donde las más fuertes son **hum3pm** y la sigue **sol**.  
 
 # Pregunta 3
 
@@ -207,32 +210,41 @@ lm_all <- lm(target ~ ., data = lluvia)
 
 lm_backward <- step(lm_all, direction = "backward")
 
-
 lm_forward <- step(lm_null, formula(lm_all), direction = "forward")
 ```
 
 ```{r modelos obtenidos, echo = FALSE}
 # Modelos
 
-print(paste("Modelo Forward  : ", formula(lm_forward)))
-print(paste("Modelo Backward : ", formula(lm_backward)))
+print(paste("Modelo Forward  : ", lm_forward$call[2]))
+print(paste("Modelo Backward : ", lm_backward$call[2]))
 ```
-#### Los modelos son iguales
+#### Los modelos obtenidos, contienen las mismas variables, pero en diferente orden. Por lo tanto, son iguales. 
 
 ### Revisión del AIC
 ```{r AIC, echo = FALSE}
 
 aic_forward <- data.frame(extractAIC(lm_forward))
-aic_backward <- data.frame(extractAIC(lm_backward))
+a_f <- aic_forward[2,]
 
-print(paste("AIC para Forward  : ", aic_forward))
-print(paste("AIC para Backward : ", aic_backward))
+aic_backward <- data.frame(extractAIC(lm_backward))
+a_b <- aic_backward[2,]
+
+print(paste("AIC para Forward  : ", a_f))
+print(paste("AIC para Backward : ", a_b))
 ```
-#### Ambos modelos rinden en igual medida.
+#### El modelo Forward, es levemente mejor según el indicador AIC.
 
 # ¿Son estos modelos significativos?  
 
-¿Cuál es el porcentaje de variabilidad explicada por el mejor de estos modelos?
+```{r pvalue de los modelos, echo = FALSE}
+
+print(paste("R cuadrado para Forward  : p-value < 2.2e-16"))
+print(paste("R cuadrado para Backward : p-value < 2.2e-16"))
+```
+#### El valor p-values es menor a 0.05. Ambos modelos son significativos.
+
+# ¿Cuál es el porcentaje de variabilidad explicada por el mejor de estos modelos?
 
 ```{r análisis de modelos, echo = FALSE}
 # Análisis
@@ -245,7 +257,7 @@ print(paste("R cuadrado para Backward : ", summary(lm_backward)$r.squared))
 print(paste("R cuadrado ajustado para Forward  : ", summary(lm_forward)$adj.r.squared))
 print(paste("R cuadrado ajustado para Backward : ", summary(lm_backward)$adj.r.squared))
 ```
-#### Ambos modelos son significativos, con un R cuadrado sobre 78%. Sin embargo, el modelo Forward, explica levemente mejor la variabilidad de los datos.
+#### Ambos modelos tienen un R cuadrado y R cuadrado ajustado sobre 78%. Explican de igual manera la variabilidad de los datos. Sin embargo, según el indicador AIC consideraremos mejor el modelo **forward**.
 
 #### Modelo propuesto:
 ```{r modelo obtenidos, echo = FALSE}
@@ -254,13 +266,14 @@ print(lm_forward$anova)
 
 print(summary(lm_forward))
 ```
-#### Podemos ver que todas las variables son significativas.
+#### Podemos ver que el modelo es significativo, con un coeficiente de determinación sobre el 78%, considerándolo un modelo aceptable. Además todas las variables son significativas. 
 
 # Pregunta 5
 >Realice un estudio de residuos con los principales supuestos del mejor modelo de la pregunta 4, por medio de test estadísticos y gráficos. ¿Es un modelo adecuado?
 
-# ¿Es un modelo adecuado?
+#### Para analizar los residuos, verificaremos los supuestos de normalidad, homocedasticidad e independencia.
 
+## Normalidad
 ```{r fig.align="center", echo = FALSE}
 ggplot(lm_forward, aes(sample = lm_forward$residuals))+
   stat_qq(color = 'steelblue')+
@@ -275,25 +288,31 @@ nortest::lillie.test(lm_forward$residuals)
 ```
 #### El valor p es bastante pequeño, por lo que se rechaza h0 confirmando lo anterior, no se cumple el supuesto de normalidad para los residuos.
 
+
+## Homocedasticidad
 ```{r fig.align="center", echo = FALSE}
 library(ggfortify)
 autoplot(lm_forward, which = c(1,3), colour = "steelblue") + theme_minimal()
 ```
   
 
-#### Observando de manera visual, se logra apreciar que la forma generada por los puntos no es constante, más bien una circunferencia, por lo tanto, no  se ve homocedasticidad.
+#### Observando de manera visual, se logra apreciar que la forma generada por los puntos no es constante, más bien similar a una circunferencia, por lo tanto, no se cumple el supuesto de homocedasticidad.
 
 ```{r supuesto homocedasticidad, echo = FALSE}
 lmtest:: bptest(lm_forward)
 ```
-#### El valor p es bastante pequeño, por lo que se rechaza h0 confirmando lo anterior, por lo tanto no  se cumple el supuesto de homocedásticidad en los residuos.
+#### El valor p es bastante pequeño, se rechaza h0 confirmando lo anterior, por lo tanto no  se cumple el supuesto de homocedásticidad en los residuos.
 
+## Independencia
 ```{r supuesto autocorrelación, echo = FALSE}
 lmtest::dwtest(lm_forward)
 ```
-#### Aceptamos h0, dado que el valor p es mayor a 5%, por lo que los residuos estan autocorrelacionados, lo que nos permite concluir que se cumple el supuesto de independencia.
+#### Aceptamos h0, dado que el valor p es mayor a 5%, por lo que los residuos no estan autocorrelacionados, lo que nos permite concluir que se cumple el supuesto de independencia.
 
-#### Se puede decir que el modelo no es aceptable, no se cumple el test de normalidad, homocedasticidad aunque si de autocorrelación.
+# ¿Es un modelo adecuado?
+
+#### A partir de lo mencionado anteriormente, tenemos estadísticos que avalan el modelo como el R cuadrado, el p value y todas las variables significativas.  
+#### Ahora bien, luego de analizar los residuos, observando los supuestos se puede decir que el modelo no es aceptable, ya que, no cumple el test de normalidad ni homocedasticidad.  
 
 
 # Pregunta 6
@@ -333,4 +352,3 @@ df <- cbind(prediccion, dato_extra)
 
 head(df, 15)
 ```
-
